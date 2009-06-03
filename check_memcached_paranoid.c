@@ -2,8 +2,8 @@
  *
  * Nagios check_memcached_paranoid plugin
  *
- * license: fixme
- * copyright: fixme
+ * License: New BSD License
+ * Copyright (c) 2009 HIROSE, Masaaki. All rights reserved.
  */
 
 const char *progname = "check_memcached_paranoid";
