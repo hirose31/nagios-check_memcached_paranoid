@@ -40,7 +40,7 @@ void print_usage(void);
 int verbose = 0;
 thresholds *my_thresholds = NULL;
 
-#if 1
+#if 0
 #define TRACE(fmt, ...)                         \
   {                                             \
     struct tm tm;                               \
