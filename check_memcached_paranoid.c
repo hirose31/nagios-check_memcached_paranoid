@@ -7,7 +7,7 @@
  */
 
 const char *progname = "check_memcached_paranoid";
-const char *revision = "1.0";
+const char *revision = "$Revision: 0.1 $";
 const char *copyright = "2009-";
 const char *email = "hirose31 _at_ gmail.com";
 
@@ -50,60 +50,25 @@ thresholds *my_thresholds = NULL;
            tv.tv_usec,                                         \
            __FILE__, __LINE__, __VA_ARGS__);                   \
   }
-#define TRACE_LONG(fmt, ...)                    \
-  {                                             \
-    struct tm tm;                               \
-    struct timeval tv;                          \
-    gettimeofday(&tv, NULL);                    \
-    localtime_r(&(tv.tv_sec), &tm);                                     \
-    printf("%04d-%02d-%02d %02d:%02d:%02d.%06lu %s.%4d: (trace ) "fmt"\n", \
-           tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,                      \
-           tm.tm_hour,tm.tm_min,tm.tm_sec,                              \
-           tv.tv_usec,                                                  \
-           __FILE__, __LINE__, __VA_ARGS__);                            \
-  }
 #else
 #define TRACE(fmt, ...)
 #endif
 
-#if 0
-#define TRACE2(fmt, ...)                        \
-  #define TRACE(fmt, ...)                       \
-  {                                             \
-    struct tm tm;                               \
-    struct timeval tv;                          \
-    gettimeofday(&tv, NULL);                    \
-    localtime_r(&(tv.tv_sec), &tm);                            \
-    printf("%02d:%02d:%02d.%06lu %.12s.%4d: (trace2) "fmt"\n", \
-           tm.tm_hour,tm.tm_min,tm.tm_sec,                     \
-           tv.tv_usec,                                         \
-           __FILE__, __LINE__, __VA_ARGS__);                   \
-  }
-#else
-#define TRACE2(fmt, ...)
-#endif
-
-static void die1(const char *msg)
-{
-  perror(msg);
-  exit(EXIT_FAILURE);
-}
-
 int main(int argc, char ** argv)
 {
   struct memcache *mc;
-  char key[12];
-  u_int32_t keylen;
-  u_int32_t expire = 12;
-  char *val;
-  int rv;
+  char             key[12];
+  u_int32_t        keylen;
+  u_int32_t        expire = 12;
+  char            *val;
+  int              rv;
 
   setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
 
   /* Parse extra opts if any */
-  argv=np_extra_opts (&argc, argv, progname);
+  argv = np_extra_opts (&argc, argv, progname);
 
   if (process_arguments (argc, argv) == ERROR)
     usage4 (_("Could not parse arguments"));
@@ -112,7 +77,10 @@ int main(int argc, char ** argv)
 
   // initialize
   mc = mc_new();
-  if (mc == NULL) die1("memcached_create");
+  if (mc == NULL) {
+    puts("failed to mc_new");
+    exit(EXIT_CRITICAL);
+  }
   mc_server_add(mc, mc_host, mc_port);
 
   srand(time(NULL) & getpid());
