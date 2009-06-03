@@ -16,10 +16,19 @@ const char *email = "hirose31 _at_ gmail.com";
 #include "utils_base.h"
 #include "netutils.h"
 
-#define MEMCACHED_PORT 11211
+#include "memcache.h"
 
-char        *mc_host = NULL;
-unsigned int mc_port = MEMCACHED_PORT;
+#define MEMCACHED_PORT "11211"
+#define TEST_VAL "check_memcached_paranoid"
+
+#define EXIT_OK       0
+#define EXIT_WARNING  1
+#define EXIT_CRITICAL 2
+#define EXIT_UNKNOWN  3
+
+
+char *mc_host = NULL;
+char *mc_port = MEMCACHED_PORT;
 
 int  process_arguments(int, char **);
 int  validate_arguments(void);
@@ -74,8 +83,21 @@ thresholds *my_thresholds = NULL;
 #define TRACE2(fmt, ...)
 #endif
 
+static void die1(const char *msg)
+{
+  perror(msg);
+  exit(EXIT_FAILURE);
+}
+
 int main(int argc, char ** argv)
 {
+  struct memcache *mc;
+  char key[12];
+  u_int32_t keylen;
+  u_int32_t expire = 12;
+  char *val;
+  int rv;
+
   setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
@@ -86,8 +108,56 @@ int main(int argc, char ** argv)
   if (process_arguments (argc, argv) == ERROR)
     usage4 (_("Could not parse arguments"));
 
-
   TRACE("%s",">>main");
+
+  // initialize
+  mc = mc_new();
+  if (mc == NULL) die1("memcached_create");
+  mc_server_add(mc, mc_host, mc_port);
+
+  srand(time(NULL) & getpid());
+  sprintf(key, "%d", rand());
+  keylen = strlen(key);
+  TRACE("[key]%s[keylen]%d", key, keylen);
+
+  val = (char *)calloc(1, strlen(TEST_VAL)+1);
+  sprintf(val, "%s", TEST_VAL);
+  TRACE("[val]%s", val);
+
+  // set
+  rv = mc_set(mc, key, keylen, val, strlen(val), expire, 0);
+  if (rv != 0) {
+    puts("failed to set");
+    exit(EXIT_CRITICAL);
+  }
+  free(val);
+
+  // get
+  val = (char *)mc_aget(mc, key, keylen);
+  if (val == NULL) {
+    puts("failed to get after set");
+    exit(EXIT_CRITICAL);
+  }
+  TRACE("[val]%s", val);
+
+  // delete
+  rv = mc_delete(mc, key, keylen, 0);
+  if (rv != 0) {
+    puts("failed to delete");
+    exit(EXIT_CRITICAL);
+  }
+
+  // get
+  val = (char *)mc_aget(mc, key, keylen);
+  if (val != NULL) {
+    puts("failed to get after delete");
+    exit(EXIT_CRITICAL);
+  }
+  TRACE("[val]%s", val);
+
+  free(val);
+  mc_free(mc);
+
   return 0;
 }
 
@@ -122,7 +192,7 @@ process_arguments (int argc, char **argv)
 
     switch (c) {
     case 'H':
-      if (is_host (optarg)) {
+      if (is_host(optarg)) {
         mc_host = optarg;
       }
       else {
@@ -130,7 +200,7 @@ process_arguments (int argc, char **argv)
       }
       break;
     case 'P':
-      mc_port = atoi(optarg);
+      mc_port = optarg;
       break;
     case 'v':
       verbose++;
@@ -172,7 +242,7 @@ int validate_arguments(void)
 void print_help(void)
 {
   char *mcport;
-  asprintf (&mcport, "%d", MEMCACHED_PORT);
+  asprintf(&mcport, "%s", MEMCACHED_PORT);
 
   print_revision (progname, revision);
 
@@ -185,7 +255,7 @@ void print_help(void)
   print_usage ();
 
   printf (_(UT_HELP_VRSN));
-  printf (_(UT_EXTRA_OPTS));
+  //fixme  printf (_(UT_EXTRA_OPTS));
   printf (_(UT_WARN_CRIT_RANGE));
   printf (_(UT_HOST_PORT), 'P', mcport);
 
