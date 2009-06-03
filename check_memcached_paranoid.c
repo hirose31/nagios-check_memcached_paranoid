@@ -8,7 +8,9 @@
 
 const char *progname = "check_memcached_paranoid";
 const char *revision = "$Revision: 0.1 $";
-const char *copyright = "2009-";
+#define MY_COPYRIGHT "Copyright (c) %s HIROSE, Masaaki. All rights reserved.\n\
+\t<%s>\n\n"
+const char *copyright = "2009";
 const char *email = "hirose31 _at_ gmail.com";
 
 #include "common.h"
@@ -214,16 +216,16 @@ void print_help(void)
 
   print_revision (progname, revision);
 
-  printf (_(COPYRIGHT), copyright, email);
+  printf (_(MY_COPYRIGHT), copyright, email);
 
-  printf ("%s\n", _("This program checks a query result of SET, GET, DELETE, GET"));
+  printf ("%s\n", _("This program checks results of request sequentially: SET, GET, DELETE, GET"));
 
   printf ("\n\n");
 
   print_usage ();
 
   printf (_(UT_HELP_VRSN));
-  //fixme  printf (_(UT_EXTRA_OPTS));
+  printf (_(UT_EXTRA_OPTS));
   printf (_(UT_WARN_CRIT_RANGE));
   printf (_(UT_HOST_PORT), 'P', mcport);
 
@@ -233,7 +235,8 @@ void print_help(void)
   printf (_(UT_EXTRA_OPTS_NOTES));
 #endif
 
-  printf (_(UT_SUPPORT));
+  /* printf (_(UT_SUPPORT)); */
+  puts("\nRepository:\n  http://github.com/hirose31/nagios-check_memcached_paranoid/tree/master\n\n");
 }
 
 
