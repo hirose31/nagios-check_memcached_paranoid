@@ -40,7 +40,7 @@ void print_usage(void);
 int verbose = 0;
 thresholds *my_thresholds = NULL;
 
-#if 0
+#if 1
 #define TRACE(fmt, ...)                         \
   {                                             \
     struct tm tm;                               \
@@ -83,7 +83,12 @@ int main(int argc, char ** argv)
     puts("failed to mc_new");
     exit(EXIT_CRITICAL);
   }
-  mc_server_add(mc, mc_host, mc_port);
+  TRACE("[server]%s:%s", mc_host, mc_port);
+  rv = mc_server_add(mc, mc_host, mc_port);
+  if (rv != 0) {
+    printf("failed to server_add (%d)\n", rv);
+    exit(EXIT_CRITICAL);
+  }
 
   srand(time(NULL) & getpid());
   sprintf(key, "%d", rand());
@@ -97,7 +102,7 @@ int main(int argc, char ** argv)
   // set
   rv = mc_set(mc, key, keylen, val, strlen(val), expire, 0);
   if (rv != 0) {
-    puts("failed to set");
+    printf("failed to set (%d)\n", rv);
     exit(EXIT_CRITICAL);
   }
   free(val);
@@ -105,7 +110,7 @@ int main(int argc, char ** argv)
   // get
   val = (char *)mc_aget(mc, key, keylen);
   if (val == NULL) {
-    puts("failed to get after set");
+    printf("failed to get after set\n");
     exit(EXIT_CRITICAL);
   }
   TRACE("[val]%s", val);
@@ -113,14 +118,14 @@ int main(int argc, char ** argv)
   // delete
   rv = mc_delete(mc, key, keylen, 0);
   if (rv != 0) {
-    puts("failed to delete");
+    printf("failed to delete (%d)\n", rv);
     exit(EXIT_CRITICAL);
   }
 
   // get
   val = (char *)mc_aget(mc, key, keylen);
   if (val != NULL) {
-    puts("failed to get after delete");
+    printf("failed to get after delete\n");
     exit(EXIT_CRITICAL);
   }
   TRACE("[val]%s", val);
