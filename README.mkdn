@@ -1,0 +1,21 @@
+nagios-check_memcached_paranoid
+================
+
+This program checks memcached (or compatible) server by memcached protocol:
+SET, GET, DELETE and GET.
+
+1. SET random_key set_value
+2. GET random_key
+*  if got_value != set_value -> CRITICAL
+3. DELETE random_key
+4. GET random_key
+*  if got_value != NULL -> CRITICAL
+5. OK
+
+example:
+----------------
+
+    check_memcached_paranoid -H 192.0.2.1
+    
+    check_memcached_paranoid -H 192.0.2.2 -P 11212 -E 12
+
