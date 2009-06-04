@@ -29,8 +29,9 @@ const char *email = "hirose31 _at_ gmail.com";
 #define EXIT_UNKNOWN  3
 
 
-char *mc_host = NULL;
-char *mc_port = MEMCACHED_PORT;
+char      *mc_host   = NULL;
+char      *mc_port   = MEMCACHED_PORT;
+u_int32_t  mc_expire = 0;
 
 int  process_arguments(int, char **);
 int  validate_arguments(void);
@@ -61,7 +62,6 @@ int main(int argc, char ** argv)
   struct memcache *mc;
   char             key[12];
   u_int32_t        keylen;
-  u_int32_t        expire = 12;
   char            *val;
   int              rv;
 
@@ -100,7 +100,8 @@ int main(int argc, char ** argv)
   TRACE("[val]%s", val);
 
   // set
-  rv = mc_set(mc, key, keylen, val, strlen(val), expire, 0);
+  TRACE("[expire]%d", mc_expire);
+  rv = mc_set(mc, key, keylen, val, strlen(val), mc_expire, 0);
   if (rv != 0) {
     printf("failed to set (%d)\n", rv);
     exit(EXIT_CRITICAL);
@@ -148,6 +149,7 @@ process_arguments (int argc, char **argv)
   static struct option longopts[] = {
     {"hostname" ,required_argument, 0, 'H'},
     {"port"     ,required_argument, 0, 'P'},
+    {"expire"   ,required_argument, 0, 'E'},
     {"verbose"  ,no_argument,       0, 'v'},
     {"version"  ,no_argument,       0, 'V'},
     {"help"     ,no_argument,       0, 'h'},
@@ -160,7 +162,7 @@ process_arguments (int argc, char **argv)
     return ERROR;
 
   while (1) {
-    c = getopt_long (argc, argv, "H:P:vVhw:c:", longopts, &option);
+    c = getopt_long (argc, argv, "H:P:E:vVhw:c:", longopts, &option);
 
     if (c == -1 || c == EOF)
       break;
@@ -176,6 +178,9 @@ process_arguments (int argc, char **argv)
       break;
     case 'P':
       mc_port = optarg;
+      break;
+    case 'E':
+      mc_expire = atoi(optarg);
       break;
     case 'v':
       verbose++;
@@ -233,6 +238,7 @@ void print_help(void)
   printf (_(UT_EXTRA_OPTS));
   printf (_(UT_WARN_CRIT_RANGE));
   printf (_(UT_HOST_PORT), 'P', mcport);
+  printf (" -E, --expire=INTEGER\n    expire time(second) for SET command (default: 0)\n");
 
 #ifdef NP_EXTRA_OPTS
   printf ("\n");
@@ -248,5 +254,5 @@ void print_help(void)
 void print_usage(void)
 {
   printf (_("Usage:"));
-  printf (" %s -H host [-P port] [-w warn] [-c crit]\n", progname);
+  printf (" %s -H host [-P port] [-E expire] [-w warn] [-c crit]\n", progname);
 }
