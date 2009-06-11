@@ -110,11 +110,12 @@ int main(int argc, char ** argv)
 
   // get
   val = (char *)mc_aget(mc, key, keylen);
+  TRACE("[val]%s", val);
   if (val == NULL) {
     printf("failed to get after set\n");
     exit(EXIT_CRITICAL);
   }
-  TRACE("[val]%s", val);
+  free(val);
 
   // delete
   rv = mc_delete(mc, key, keylen, 0);
@@ -125,13 +126,13 @@ int main(int argc, char ** argv)
 
   // get
   val = (char *)mc_aget(mc, key, keylen);
+  TRACE("[val]%s", val);
   if (val != NULL) {
     printf("failed to get after delete\n");
     exit(EXIT_CRITICAL);
   }
-  TRACE("[val]%s", val);
-
   free(val);
+
   mc_free(mc);
 
   return 0;
