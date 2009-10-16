@@ -85,13 +85,14 @@ int main(int argc, char ** argv)
   }
   TRACE("[server]%s:%s", mc_host, mc_port);
   rv = mc_server_add(mc, mc_host, mc_port);
+  TRACE("[mc_server_add rv]%d", rv);
   if (rv != 0) {
     printf("failed to server_add (%d)\n", rv);
     exit(EXIT_CRITICAL);
   }
 
   srand(time(NULL) & getpid());
-  sprintf(key, "%d", rand());
+  sprintf(key, "%d_%s", rand(), mc_host);
   keylen = strlen(key);
   TRACE("[key]%s[keylen]%d", key, keylen);
 
@@ -102,6 +103,7 @@ int main(int argc, char ** argv)
   // set
   TRACE("[expire]%d", mc_expire);
   rv = mc_set(mc, key, keylen, val, strlen(val), mc_expire, 0);
+  TRACE("[set rv]%d", rv);
   if (rv != 0) {
     printf("failed to set (%d)\n", rv);
     exit(EXIT_CRITICAL);
@@ -119,6 +121,7 @@ int main(int argc, char ** argv)
 
   // delete
   rv = mc_delete(mc, key, keylen, 0);
+  TRACE("[delete rv]%d", rv);
   if (rv != 0) {
     printf("failed to delete (%d)\n", rv);
     exit(EXIT_CRITICAL);
