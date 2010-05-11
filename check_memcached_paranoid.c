@@ -84,7 +84,7 @@ int main(int argc, char ** argv)
   gettimeofday(&tv, NULL);
   mc = mc_new();
   if (mc == NULL) {
-    printf("MEMCACHED %s: failed to mc\n_new", _("CRITICAL"));
+    printf("MEMCACHED %s: failed to mc_new\n", _("CRITICAL"));
     exit(EXIT_CRITICAL);
   }
   TRACE("[server]%s:%s", mc_host, mc_port);
