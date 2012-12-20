@@ -13,14 +13,16 @@ const char *revision = "$Revision: 0.1 $";
 const char *copyright = "2009";
 const char *email = "hirose31 _at_ gmail.com";
 
+#include <unistd.h>
+
 #include "common.h"
 #include "utils.h"
 #include "utils_base.h"
 #include "netutils.h"
 
-#include "memcache.h"
+#include <libmemcached/memcached.h>
 
-#define MEMCACHED_PORT "11211"
+#define MEMCACHED_PORT 11211
 #define TEST_VAL "check_memcached_paranoid"
 
 #define EXIT_OK       0
@@ -29,8 +31,8 @@ const char *email = "hirose31 _at_ gmail.com";
 #define EXIT_UNKNOWN  3
 
 
-char      *mc_host   = NULL;
-char      *mc_port   = MEMCACHED_PORT;
+char      *mc_host = NULL;
+in_port_t *mc_port = MEMCACHED_PORT;
 u_int32_t  mc_expire = 0;
 
 int  process_arguments(int, char **);
@@ -59,14 +61,16 @@ thresholds *my_thresholds = NULL;
 
 int main(int argc, char ** argv)
 {
-  struct memcache *mc;
-  char             key[12];
-  u_int32_t        keylen;
-  char            *val;
-  int              rv;
-  struct timeval   tv;
-  long             microsec;
-  double           elapsed_time;
+  struct memcached_st *mc;
+  memcached_return_t  rc;
+  char                key[32];
+  u_int32_t           keylen;
+  char               *val;
+  size_t              value_len;
+  uint32_t            flags;
+  struct timeval      tv;
+  long                microsec;
+  double              elapsed_time;
 
   setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
@@ -82,18 +86,20 @@ int main(int argc, char ** argv)
 
   // initialize
   gettimeofday(&tv, NULL);
-  mc = mc_new();
+  mc = memcached_create(NULL);
   if (mc == NULL) {
-    printf("MEMCACHED %s: failed to mc_new\n", _("CRITICAL"));
+    printf("MEMCACHED %s: failed to memcached_create\n", _("CRITICAL"));
     exit(EXIT_CRITICAL);
   }
-  TRACE("[server]%s:%s", mc_host, mc_port);
-  rv = mc_server_add(mc, mc_host, mc_port);
-  TRACE("[mc_server_add rv]%d", rv);
-  if (rv != 0) {
-    printf("MEMCACHED %s: failed to server_add (%d)\n", _("CRITICAL"), rv);
+  TRACE("[server]%s:%d", mc_host, (int)mc_port);
+  rc = memcached_server_add(mc, mc_host, (in_port_t)mc_port);
+  TRACE("[mc_server_add rv]%d", rc);
+  if (rc != MEMCACHED_SUCCESS) {
+    printf("MEMCACHED %s: failed to memcached_server_add (%d)\n", _("CRITICAL"), rc);
     exit(EXIT_CRITICAL);
   }
+
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_TCP_NODELAY, 1);
 
   srand(time(NULL) & getpid());
   sprintf(key, "%d_%s", rand(), mc_host);
@@ -106,41 +112,41 @@ int main(int argc, char ** argv)
 
   // set
   TRACE("[expire]%d", mc_expire);
-  rv = mc_set(mc, key, keylen, val, strlen(val), mc_expire, 0);
-  TRACE("[set rv]%d", rv);
-  if (rv != 0) {
-    printf("MEMCACHED %s: failed to set (%d)\n", _("CRITICAL"), rv);
+  rc = memcached_set(mc, key, keylen, val, strlen(val), mc_expire, 0);
+  TRACE("[set rv]%d", rc);
+  if (rc != MEMCACHED_SUCCESS) {
+    printf("MEMCACHED %s: failed to set (%d)\n", _("CRITICAL"), rc);
     exit(EXIT_CRITICAL);
   }
   free(val);
 
   // get
-  val = (char *)mc_aget(mc, key, keylen);
+  val = (char *)memcached_get(mc, key, keylen, &value_len, &flags, &rc);
   TRACE("[val]%s", val);
-  if (val == NULL) {
+  if (rc != MEMCACHED_SUCCESS) {
     printf("MEMCACHED %s: failed to get after set\n", _("CRITICAL"));
     exit(EXIT_CRITICAL);
   }
   free(val);
 
   // delete
-  rv = mc_delete(mc, key, keylen, 0);
-  TRACE("[delete rv]%d", rv);
-  if (rv != 0) {
-    printf("MEMCACHED %s: failed to delete (%d)\n", _("CRITICAL"), rv);
+  rc = memcached_delete(mc, key, keylen, 0);
+  TRACE("[delete rv]%d", rc);
+  if (rc != MEMCACHED_SUCCESS) {
+    printf("MEMCACHED %s: failed to delete (%d)\n", _("CRITICAL"), rc);
     exit(EXIT_CRITICAL);
   }
 
   // get
-  val = (char *)mc_aget(mc, key, keylen);
+  val = (char *)memcached_get(mc, key, keylen, &value_len, &flags, &rc);
   TRACE("[val]%s", val);
-  if (val != NULL) {
+  if (rc != MEMCACHED_NOTFOUND) {
     printf("MEMCACHED %s: failed to get after delete\n", _("CRITICAL"));
     exit(EXIT_CRITICAL);
   }
   free(val);
 
-  mc_free(mc);
+  memcached_free(mc);
 
   microsec = deltime(tv);
   elapsed_time = (double)microsec / 1.0e6;
