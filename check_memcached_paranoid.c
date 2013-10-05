@@ -32,7 +32,7 @@ const char *email = "hirose31 _at_ gmail.com";
 
 
 char      *mc_host = NULL;
-in_port_t *mc_port = MEMCACHED_PORT;
+in_port_t  mc_port = MEMCACHED_PORT;
 u_int32_t  mc_expire = 0;
 
 int  process_arguments(int, char **);
@@ -195,7 +195,7 @@ process_arguments (int argc, char **argv)
       }
       break;
     case 'P':
-      mc_port = optarg;
+      mc_port = atoi(optarg);
       break;
     case 'E':
       mc_expire = atoi(optarg);
@@ -240,7 +240,7 @@ int validate_arguments(void)
 void print_help(void)
 {
   char *mcport;
-  asprintf(&mcport, "%s", MEMCACHED_PORT);
+  asprintf(&mcport, "%d", MEMCACHED_PORT);
 
   print_revision (progname, revision);
 
