@@ -7,10 +7,10 @@
  */
 
 const char *progname = "check_memcached_paranoid";
-const char *revision = "$Revision: 0.1 $";
+const char *revision = "$Revision: 0.2 $";
 #define MY_COPYRIGHT "Copyright (c) %s HIROSE, Masaaki. All rights reserved.\n\
 \t<%s>\n\n"
-const char *copyright = "2009";
+const char *copyright = "2009-2014";
 const char *email = "hirose31 _at_ gmail.com";
 
 #include "common.h"
