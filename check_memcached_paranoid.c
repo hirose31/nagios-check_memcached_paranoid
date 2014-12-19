@@ -13,12 +13,11 @@ const char *revision = "$Revision: 0.1 $";
 const char *copyright = "2009";
 const char *email = "hirose31 _at_ gmail.com";
 
-#include <unistd.h>
-
 #include "common.h"
 #include "utils.h"
 #include "utils_base.h"
 #include "netutils.h"
+#include "popen.h"
 
 #include <libmemcached/memcached.h>
 
@@ -259,9 +258,7 @@ void print_help(void)
   printf (" -E, --expire=INTEGER\n    expire time(second) for SET command (default: 0)\n");
 
 #ifdef NP_EXTRA_OPTS
-  printf ("\n");
-  printf ("%s\n", _("Notes:"));
-  printf (_(UT_EXTRA_OPTS_NOTES));
+  printf (_(UT_EXTRA_OPTS));
 #endif
 
   /* printf (_(UT_SUPPORT)); */
